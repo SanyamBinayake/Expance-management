@@ -1,0 +1,95 @@
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f4f4f9;
+  margin: 0;
+  padding: 0;
+}
+
+.app-container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+header h1 {
+  margin: 0 0 10px 0;
+  color: #007bff;
+}
+
+.header-buttons button {
+  margin: 5px;
+  padding: 8px 15px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.header-buttons button:hover {
+  background-color: #0056b3;
+}
+
+.expenses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.expense-card {
+  background-color: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.expense-card:hover {
+  transform: scale(1.05);
+}
+
+.card-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.card-actions button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.card-actions button:first-child {
+  background-color: #ffc107;
+  color: white;
+}
+
+.card-actions button:first-child:hover {
+  background-color: #e0a800;
+}
+
+.card-actions button:last-child {
+  background-color: #dc3545;
+  color: white;
+}
+
+.card-actions button:last-child:hover {
+  background-color: #c82333;
+}
+
+h2 {
+  color: #007bff;
+  margin-bottom: 15px;
+}
