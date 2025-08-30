@@ -5,7 +5,15 @@ from typing import List
 import csv
 import io
 from fastapi.responses import StreamingResponse
-from reportlab.pdfgen import canvas
+
+# --- New imports for the improved PDF generation ---
+from datetime import datetime
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+# --- End of new imports ---
 
 from . import models, schemas, database
 
@@ -86,27 +94,61 @@ def export_csv(db: Session = Depends(get_db)):
         headers={"Content-Disposition": "attachment; filename=expenses.csv"}
     )
 
-# -------------------- PDF Export --------------------
+# -------------------- PDF Export (UPDATED) --------------------
 
 @app.get("/expenses/export/pdf")
 def export_pdf(db: Session = Depends(get_db)):
     expenses = db.query(models.Expense).all()
     buffer = io.BytesIO()
-    p = canvas.Canvas(buffer)
-    p.setFont("Helvetica", 12)
-    p.drawString(100, 800, "Expense Report")
-    y = 760
+
+    # Use SimpleDocTemplate for a structured document
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=inch/2, leftMargin=inch/2, topMargin=inch/2, bottomMargin=inch/2)
+    
+    # "story" will hold all the elements of our PDF
+    story = []
+    styles = getSampleStyleSheet()
+
+    # 1. Document Title
+    story.append(Paragraph("Expense Report", styles['h1']))
+    story.append(Spacer(1, 0.2*inch))
+
+    # 2. Subtitle with Generation Date
+    generation_date = datetime.now().strftime("%B %d, %Y")
+    story.append(Paragraph(f"Generated on: {generation_date}", styles['Normal']))
+    story.append(Spacer(1, 0.4*inch))
+
+    # 3. Prepare data for the table
+    table_data = [["ID", "Title", "Amount ($)", "Category", "Date"]]
+    
     for exp in expenses:
-        line = f"{exp.id} | {exp.title} | {exp.amount} | {exp.category} | {exp.date}"
-        p.drawString(80, y, line)
-        y -= 20
-        if y < 50:  # start a new page if space runs out
-            p.showPage()
-            y = 800
-    p.save()
+        formatted_amount = f"{exp.amount:.2f}"
+        formatted_date = exp.date.strftime("%Y-%m-%d")
+        table_data.append([exp.id, exp.title, formatted_amount, exp.category, formatted_date])
+
+    # 4. Create and Style the Table
+    expense_table = Table(table_data)
+    style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F46E5')), # Header background
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F3F4F6')),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ])
+    expense_table.setStyle(style)
+    story.append(expense_table)
+    story.append(Spacer(1, 0.4*inch))
+
+    # 5. Add a Summary (Total Expenses)
+    total_expenses = sum(exp.amount for exp in expenses)
+    story.append(Paragraph(f"Total Expenses: ₹{total_expenses:.2f}", styles['h3']))
+
+    # Build the PDF
+    doc.build(story)
+    
     buffer.seek(0)
     return StreamingResponse(
         buffer, media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=expenses.pdf"}
     )
-
